@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+  <head>
+    <title>Sagnik Sengupta</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+    <script type="text/javascript" >
+    var Board = (function() { "use strict";
+
+/* Make a shallow copy of an array. */
+function arrayCopy(source) {
+  var i, len = source.length, target = new Array(len);
+  for (i = 0; i < len; ++i) {
+    target[i] = source[i];
+  }
+  return target;
+}
+
+/* Return the last element of an array. */
+function last(arr) {
+  return arr[arr.length - 1];
+}
+
+/* Parse a move in one of the following formats:
+ * Quantum:   '6-3'
+ * Collapse:  '->3'
+ * Classical: '8'
+ */
+function parseMove(s) {
+  var a, b;
+  if (s.match(/\d-\d/)) {
+    a = +s.charAt(0);
+    b = +s.charAt(2);
+    if (a && b) {
+      return { type: Board.QUANTUM, cells: [a, b] };
+    }      
+  } else if (s.match(/->\d/)) {
+    a = +s.charAt(2);
+    if (a) {
+      return { type: Board.COLLAPSE, cells: a };
+    }
+  } else if (s.match(/\d/)) {
+    a = +s;
+    if (a) {
+      return { type: Board.CLASSICAL, cells: a };
+    }
+  }
+  return null;
+}
+
+/* Render a move as a string. The inverse of parseMove(s). */
+function stringifyMove(move) {
+  if (move.type === Board.QUANTUM) {
+    return move.cells[0] + '-' + move.cells[1];
+  }
+  if (move.type === Board.COLLAPSE) {
+    return '->' + move.cells;
+  }
+  if (move.type === Board.CLASSICAL) {
+    return move.cells.toString();
+  }
+  return '';
+}
+
+/* Take either a string or a move object, and return a move object. */
+function convertMove(move) {
+  if (typeof move === 'string') {
+    return parseMove(move);
+  }
+  if (typeof move === 'object') {
+    return move;
+  }
+  return null;
+}
+
+var Board = function() {
+  this.clear();
+};
+
+// Public class constants
+Board.QUANTUM = 'quantum';
+Board.COLLAPSE = 'collapse';
+Board.CLASSICAL = 'classical';
+
+Board.PLAYERX = 'X';
+Board.PLAYERO = 'O';
+
+Board.WIN_POSITIONS = [
+  // Rows
+  [1, 2, 3],
+  [4, 5, 6],
+  [7, 8, 9],
+  // Columns
+  [1, 4, 7],
+  [2, 5, 8],
+  [3, 6, 9],
+  // Diagonals
+  [1, 5, 9],
+  [3, 5, 7]
+];
+
+// Prototype methods
+Board.prototype = {
+  clear: function() {
+    var i;
+    this._board = [];
+    this._edges = [];
+    for (i = 0; i < 9; ++i) {
+      this._board[i] = [];
+      this._edges[i] = [];
+    }
+
+    this._placed = 0;
+    this._nextType = Board.QUANTUM;
+    this._tictactoes = [];
+
+    this._history = [];
+    this._collapseStates = [];
+  },
+
+  board: function() {
+    return this._board;
+  },
+
+  get: function(i) {
+    return this._board[i - 1];
+  },
+
+  placed: function() {
+    return this._placed;
+  },
+
+  turn: function() {
+    return this._placed % 2 ? Board.PLAYERO : Board.PLAYERX;
+  },
+
+  nextType: function() {
+    return this._nextType;
+  },
+
+  gameOver: function() {
+    return !this._nextType;
+  },
+
+  tictactoes: function() {
+    return this._tictactoes;
+  },
+
+  scores: function () {
+    var scores = {}, tictactoes = this._tictactoes;
+    if (!this.gameOver()) {
+      return null;
+    }
+    scores[Board.PLAYERX] = scores[Board.PLAYERO] = 0;
+    tictactoes.forEach(function(tictactoe) {
+      scores[tictactoe.player] += tictactoe.score;
+    });
+    return scores;
+  },
+
+  canMove: function(move) {
+    return this._canMove(convertMove(move));
+  },
+
+  move: function(move) {
+    var moveObj = convertMove(move);
+
+    if (!this._canMove(moveObj)) {
+      return null;
+    }
+
+    this._history.push(moveObj);
+    this._applyMove(moveObj);
+    return moveObj;
+  },
+
+  history: function(verbose) {
+    if (verbose) {
+      return this._history;
+    }
+    return this._history.map(stringifyMove);
+  },
+
+  undo: function() {
+    var moveObj = this._history.pop();
+    if (moveObj) {
+      this._unapplyMove(moveObj);
+    }
+    return moveObj;
+  },
+
+  _countClassicalPieces: function() {
+    var classical = 0;
+    this._board.forEach(function(cell) {
+      if (!Array.isArray(cell)) {
+        classical++;
+      }
+    });
+    return classical;
+  },
+
+  _canMove: function (move) {
+    if (!move || move.type !== this._nextType) {
+      return false;
+    }
+
+    var a, b, board = this._board;
+
+    function isQuantum(c) {
+      return c && Array.isArray(board[c - 1]);
+    }
+
+    if (move.type === Board.QUANTUM) {
+      a = move.cells[0];
+      b = move.cells[1];
+      return isQuantum(a) && isQuantum(b) && a !== b;
+    }
+    if (move.type === Board.COLLAPSE) {
+      a = move.cells;
+      return isQuantum(a) && last(board[a - 1]) === this._placed;
+    }
+    if (move.type === Board.CLASSICAL) {
+      a = move.cells;
+      return isQuantum(a);
+    }
+    return false;
+  },
+
+  _applyMove: function(move) {
+    var a, b;
+    if (move.type === Board.QUANTUM) {
+      a = move.cells[0];
+      b = move.cells[1];
+      this._placed++;
+      if (this._reachable(a, b)) {
+          this._nextType = Board.COLLAPSE;
+      }
+      this._board[a - 1].push(this._placed);
+      this._board[b - 1].push(this._placed);
+      this._edges[a - 1].push(b);
+      this._edges[b - 1].push(a);
+    } else if (move.type === Board.COLLAPSE) {
+      a = move.cells;
+      this._collapseStates.push(arrayCopy(this._board));
+      this._collapseCell(this._placed, a);
+      this._nextType = this._countClassicalPieces() === 8 ? Board.CLASSICAL
+                                                          : Board.QUANTUM;
+      this._updateGameStatus();
+    } else if (move.type === Board.CLASSICAL) {
+      a = move.cells;
+      this._placed++;
+      this._board[a - 1] = this._placed;
+      this._updateGameStatus();
+    }
+  },
+
+  _unapplyMove: function(move) {
+    var a, b;
+    this._nextType = move.type;
+    this._tictactoes = [];
+    if (move.type === Board.QUANTUM) {
+      a = move.cells[0];
+      b = move.cells[1];
+      this._placed--;
+      this._board[a - 1].pop();
+      this._board[b - 1].pop();
+      this._edges[a - 1].pop();
+      this._edges[b - 1].pop();
+    } else if (move.type === Board.COLLAPSE) {
+      this._board = this._collapseStates.pop();
+    } else if (move.type === Board.CLASSICAL) {
+      a = move.cells;
+      this._placed--;
+      this._board[a - 1] = [];
+    }
+  },
+
+  _reachable: function(src, dest) {
+    var visited = [], edges = this._edges;
+    function visit(c) {
+      var i, neighbors;
+      if (visited.indexOf(c) !== -1) {
+        return;
+      }
+      visited.push(c);
+      edges[c - 1].forEach(visit);
+    }
+
+    visit(src);
+    return visited.indexOf(dest) !== -1;
+  },
+
+  _collapseCell: function(piece, c) {
+    /* It seems like the last move will be collapsed into two cells here, but
+     * since the moves are ordered, some other move will be collapsed into the
+     * other cell before the last move is processed.
+     */
+    var i, neighbors = this._edges[c - 1], cell = this._board[c - 1];
+    if (!Array.isArray(cell)) {
+      return;
+    }
+    this._board[c - 1] = piece;
+    for (i = 0; i < neighbors.length; ++i) {
+      this._collapseCell(cell[i], neighbors[i]);
+    }
+  },
+
+  _updateGameStatus: function() {
+    var pieces, player, minPiece, rowMaxPiece,
+        tictactoes = [];
+
+    function isX(c) {
+      return typeof c === 'number' && c % 2 === 1;
+    }
+
+    function isO(c) {
+      return typeof c === 'number' && c % 2 === 0;
+    }
+
+    function maxPiece(tictactoe) {
+      return Math.max.apply(null, tictactoe.pieces);
+    }
+
+    // Find tic-tac-toes
+    Board.WIN_POSITIONS.forEach(function(position) {
+      pieces = position.map(this.get, this);
+      player = null;
+      if (pieces.every(isX)) {
+        player = Board.PLAYERX;
+      } else if (pieces.every(isO)) {
+        player = Board.PLAYERO;
+      }
+      if (player) {
+        tictactoes.push({
+          player: player,
+          cells: position,
+          pieces: pieces});
+      }
+    }, this);
+
+    // Score tic-tac-toes
+    minPiece = 9;
+    tictactoes.forEach(function(tictactoe) {
+      rowMaxPiece = maxPiece(tictactoe);
+      if (minPiece > rowMaxPiece) {
+        minPiece = rowMaxPiece;
+      }
+    });
+    tictactoes.forEach(function(tictactoe) {
+      tictactoe.score = minPiece === maxPiece(tictactoe) ? 2 : 1;
+    });
+
+    if (tictactoes.length || this._countClassicalPieces() === 9) {
+      this._nextType = null;
+    }
+    this._tictactoes = tictactoes;
+  }
+};
+
+return Board;
+}());
+
+    </script>
+    <script type="text/javascript" >
+    var View = (function($) { "use strict";
+
+      $.fn.fadeShow = function() {
+        return this.hide().fadeIn(150);
+      };
+    
+      $.fn.fadeRemove = function() {
+        var elements = this;
+        return this.fadeOut(150, function() {
+          elements.remove();
+        });
+      };
+    
+      function View(container) {
+        var i, j, c, properties, row,
+            board = $("<div class='quantumt3'>").appendTo(container);
+    
+        function makeHandler(view, c) {
+          return function() {
+            return view._onClick(c);
+          };
+        }
+    
+        for (i = 0; i < 3; ++i) {
+          row = $("<div class='row'>").appendTo(board);
+          for (j = 0; j < 3; ++j) {
+            c = 3*i + j + 1;
+            $("<div class='cell'>")
+              .appendTo(row)
+              .click(makeHandler(this, c));
+          }
+        }
+        this._$board = board;
+      }
+    
+      View.prototype = {
+        _onClick: function(c) {
+          var handler = this.onClick;
+          if (handler) {
+            handler(c);
+          }
+        },
+    
+        _$cell: function(c) {
+          return this._$board.find(".cell").eq(c - 1);
+        },
+    
+        _createPiece: function(className, c, moveNumber) {
+          var pieceClass = moveNumber % 2 == 1 ? "x" : "o",
+              piece = $("<div>").addClass(className),
+              text = $("<p class='move-text'>" + moveNumber + "</p>");
+          piece
+            .append($("<div class='piece'>").addClass(pieceClass))
+            .append(text)
+            .appendTo(this._$cell(c));
+          // Center text vertically
+          text.css({"text-align": "center", "line-height": text.css("height")});
+          return piece;
+        },
+    
+        addClassical: function(c, moveNumber) {
+          this._createPiece("classical", c, moveNumber).fadeShow();
+        },
+    
+        hasClassical: function(c) {
+          return this._$cell(c).find(".classical").length !== 0;
+        },
+    
+        addQuantum: function(c, moveNumber) {
+          var pieceSize, $piece,
+              i = Math.floor((moveNumber - 1) / 3),
+              j = (moveNumber - 1) % 3;
+    
+          $piece = this._createPiece("quantum", c, moveNumber);
+          pieceSize = $piece.width();
+          $piece
+            .css({"top": i*pieceSize + "px", "left": j*pieceSize + "px"})
+            .fadeShow()
+        },
+    
+        removeQuantum: function(c, moveNumber) {
+          this._$cell(c)
+            .find("p:contains(" + moveNumber + ")")
+            .parent()
+            .fadeRemove();
+        },
+    
+        hasQuantum: function(c) {
+          return this._$cell(c).find(".quantum").length !== 0;
+        },
+    
+        clearCell: function(c) {
+          this._$cell(c).children().fadeRemove();
+        },
+    
+        clear: function() {
+          this._$board.find(".cell").children().fadeRemove();
+        },
+    
+        addHighlight: function(c, className) {
+          $("<div class='highlight'>")
+            .addClass(className)
+            .appendTo(this._$cell(c))
+            .fadeShow();
+        },
+    
+        addHighlights: function(cells, className) {
+          var view = this;
+          cells.forEach(function(c) {
+            view.addHighlight(c, className);
+          });
+        },
+    
+        clearHighlights: function(c) {
+          this._$board.find(".highlight").fadeRemove();
+        }
+      };
+    
+      return View;
+    }(jQuery));
+    </script>
+    <script type="text/javascript">
+    $(document).ready(function() { "use strict";
+  var board = new Board(),
+      view = new View("#quantumt3"),
+      halfMove = null;
+  view.onClick = boardClicked;
+  $("button[name='new-game']").click(newGame);
+  $("button[name='undo']").click(undo);
+  $("button[name='rules']").click(openRules);
+  $("button[name='source']").click(openSource);
+  $("#scores").hide();
+  function boardClicked(c) {
+    var nextType = board.nextType(),
+        moveNumber = board.placed() + 1,
+        move = null;
+    if (nextType === Board.QUANTUM) {
+      if (halfMove === null && Array.isArray(board.get(c))) {
+        view.addQuantum(c, moveNumber);
+        halfMove = c;
+      } else if (halfMove === c) {
+        view.removeQuantum(c, moveNumber);
+        halfMove = null;
+      } else {
+        move = {type: Board.QUANTUM, cells: [c, halfMove]};
+      }
+    } else if (nextType === Board.COLLAPSE) {
+      move = {type: Board.COLLAPSE, cells: c};
+    } else if (nextType === Board.CLASSICAL) {
+      move = {type: Board.CLASSICAL, cells: c};
+    }
+    if (!(move && board.move(move))) {
+      return;
+    }
+    if (nextType === Board.QUANTUM) {
+      halfMove = null;
+      view.addQuantum(c, moveNumber);
+    } else if (nextType === Board.COLLAPSE) {
+      syncView();
+    } else if (nextType === Board.CLASSICAL) {
+      view.addClassical(c, moveNumber);
+    }
+    updateHighlights();
+  }
+  function newGame() {
+    board.clear();
+    view.clear();
+    halfMove = null;
+    $("#scores").hide()
+  }
+  function undo() {
+    var moveNumber = board.placed() + 1;
+
+    if (halfMove) {
+      view.removeQuantum(halfMove, moveNumber);
+      halfMove = null;
+      return;
+    }
+    var move = board.undo();
+    moveNumber -= 1;
+    if (!move) {
+      return;
+    }
+    if (move.type === Board.QUANTUM) {
+      view.removeQuantum(move.cells[0], moveNumber);
+      view.removeQuantum(move.cells[1], moveNumber);
+    } else if (move.type === Board.COLLAPSE) {
+      syncView();
+    } else if (move.type === Board.CLASSICAL) {
+      view.clearCell(move.cells);
+    }
+    updateHighlights();
+  }
+  function syncView() {
+    var i, piece;
+    for (i = 1; i <= 9; ++i) {
+      piece = board.get(i);
+      if (!Array.isArray(piece) && view.hasQuantum(i)) {
+        view.clearCell(i);
+        view.addClassical(i, piece);
+      } else if (Array.isArray(piece) && view.hasClassical(i)) {
+        view.clearCell(i);
+        piece.forEach(function(moveNumber) {
+          view.addQuantum(i, moveNumber);
+        });
+      }
+    }
+  }
+  function updateHighlights() {
+    view.clearHighlights();
+    if (board.nextType() === Board.COLLAPSE) {
+      updateCollapseHighlights();
+    }
+    if (board.gameOver()) {
+      updateTictactoeHighlights();
+      var scores = stringifyScores();
+      $("#scores").text(scores).slideDown();
+    } else {
+      $("#scores").hide();
+    }
+  }
+  function stringifyScores() {
+    var scores = board.scores();
+    function stringify(player) {
+      var result,
+          half = "\u00bd",
+          score = scores[player];
+      switch (score) {
+        case 0: return "0";
+        case 1: return half;
+        case 2: return "1";
+        case 3: return "1" + half;
+        case 4: return "2";
+      }
+      return "";
+    }
+    return stringify(Board.PLAYERX) + " \u2014 " + stringify(Board.PLAYERO);
+  }
+  function updateCollapseHighlights() {
+    var i;
+    for (i = 1; i <= 9; ++i) {
+      if (board.canMove({type: Board.COLLAPSE, cells: i})) {
+        view.addHighlight(i, "collapse");
+      }
+    }
+  }
+  function updateTictactoeHighlights() {
+    var playerClass;
+    board.tictactoes().forEach(function(tictactoe) {
+      playerClass = tictactoe.player === Board.PLAYERX ? "x" : "o";
+      view.addHighlights(tictactoe.cells, playerClass);
+    });
+  }
+
+});
+    </script>
+  </head>
+  <style media="screen">
+    body{
+      margin-top: 100px;
+      padding: 0;
+      text-align: center;
+      font-family: sans-serif;
+      background-image: linear-gradient(120deg, #12c2e9, #c471ed, #f64f59);
+      min-height:10vw
+    }
+    #container {
+      display: table;
+      margin-left: auto;
+      margin-right: auto;
+      text-align: center;
+    }
+    #scores {
+      font-family: sans-serif;
+      font-size: 30px;
+    }
+    .quantumt3 {
+      display: table;
+      border-collapse: collapse;
+      margin: 10px;
+    }
+    .quantumt3 .row {
+      display: table-row;
+    }
+    .quantumt3 .cell {
+      display: table-cell;
+      position: relative;
+      width: 200px;
+      height: 200px;
+      font-size: 48px;
+      border: 10px solid rgb(0, 0, 0);
+    }
+    .classical {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      font-size: 100%;
+    }
+    .quantum {
+      position: absolute;
+      width: 33%;
+      height: 33%;
+      font-size: 33%;
+    }
+    .piece {
+      position: absolute;
+      margin: auto;
+      left: 0;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      border-radius: 30%;
+      width: 60%;
+      height: 60%;
+    }
+    .piece.x {
+      background-color: royalblue;
+    }
+    .piece.o {
+      background-color: crimson;
+    }
+    .move-text {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      z-index: 1;
+      font-size: 90%;
+      font-weight: 900;
+      color: white;
+    }
+    .highlight {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      z-index: -10;
+    }
+    .highlight.collapse {
+      background-color: rgb(174, 133, 250);
+    }
+    .highlight.x {
+      background-color: rgb(166, 255, 185);
+    }
+    .highlight.o {
+      background-color: rgb(166, 255, 185);
+    }
+    #b1{
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 15px;
+      margin-top: 5px;
+      border: none;
+      color: #fff;
+      background-image: linear-gradient(120deg, #e056fd,#f0932b);
+      width: 120px;
+      padding: 12px;
+      border-radius: 30px;
+      outline: none;
+      cursor: pointer;
+    }
+    #b2 {
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 15px;
+      margin-top: 5px;
+      border: none;
+      color: #fff;
+      background-image: linear-gradient(120deg, #10ac84, #48dbfb);
+      width: 120px;
+      padding: 12px;
+      border-radius: 30px;
+      outline: none;
+      cursor: pointer;
+    }
+  </style>
+  <body>
+    <div id="container">
+      <div id="buttons">
+        <button id="b1" type="button" name="new-game">New Game</button>
+        <button id="b2" type="button" name="undo">Undo</button>
+      </div>
+      <div id="quantumt3"></div>
+      <p id="scores"></p>
+    </div>
+  </body>
+</html>
