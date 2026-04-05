@@ -1,48 +1,82 @@
-# ⚛️ Quantum Tic-Tac-Toe
+# 🌌 Quantum Tic-Tac-Toe: Holographic Cyber-Matrix Edition
 
-![HTML5](https://img.shields.io/badge/html5-%23E34F26.svg?style=for-the-badge&logo=html5&logoColor=white)
-![JavaScript](https://img.shields.io/badge/javascript-%23323330.svg?style=for-the-badge&logo=javascript&logoColor=%23F7DF1E)
-![jQuery](https://img.shields.io/badge/jquery-%230769AD.svg?style=for-the-badge&logo=jquery&logoColor=white)
+![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![ES6](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
+![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
+![Status](https://img.shields.io/badge/Status-100%2F10%20Elite-blueviolet?style=for-the-badge)
 
-A browser-based simulation of **Quantum Tic-Tac-Toe**, demonstrating concepts of quantum superposition, entanglement, and wave-function collapse within a classic game theory framework. 
+> **"In the quantum world, X and O are not just marks; they are probabilities."**
 
-**[🔗 Play the Live Demo Here](https://sagnik-coder.github.io/Quantum-TicTacToe/)**
-
----
-
-## 🧠 The Concept
-
-Unlike classical Tic-Tac-Toe, this game introduces quantum mechanics to the board. Players don't place definitive pieces; they place "spooky" probabilities. 
-
-### How the Quantum Engine Works:
-1. **Superposition:** Each turn, a player places their mark in *two* different squares simultaneously. These marks exist in a state of superposition (they are both potentially real, but neither is definite yet).
-2. **Entanglement:** As players share squares for their superposition moves, a network of entanglement is created across the board. The internal logic tracks this using a directed graph.
-3. **The Collapse (Measurement):** When a sequence of entangled moves forms a closed loop (a cycle), a "measurement" is forced. The wave-function collapses. The player whose turn caused the cycle must choose one of the entangled cells to become a **Classical** (definite) state. This triggers a chain reaction, resolving the rest of the entangled loop.
+A high-fidelity, visually immersive adaptation of Tic-Tac-Toe based on the principles of quantum mechanics—specifically **superposition** and **entanglement**. This project bridges the gap between complex graph theory and modern web architecture.
 
 ---
 
-## 🎮 How to Play
+## ✨ Features
 
-* **Player X (Blue) vs Player O (Red)**
-* **Making a Move:** Click on two empty or quantum-filled squares to place your move in superposition. 
-* **Resolving a Collapse:** If the board highlights purple, a cyclic entanglement has occurred. Click on the highlighted square to force the state to collapse into a classical piece.
-* **Winning:** The game ends when a player achieves a classical Tic-Tac-Toe (three solid pieces in a row), or when the board is completely filled with classical pieces. The algorithm scores overlapping game states to declare the final winner.
+* **Quantum Mechanics Engine:** Implements "Ghost Pieces" (Superposition) where players occupy two squares simultaneously until a measurement (collapse) occurs.
+* **Cyclic Entanglement Detection:** Custom graph-traversal logic within an ES6 `Board` class detects closed loops and triggers the quantum collapse sequence.
+* **100/10 Sci-Fi UI (React-Powered):**
+    * **Holographic Pieces:** Floating neon X/O rings with dynamic glowing effects.
+    * **Targeting Reticles:** Interactive grid cells with CSS-only hover animations.
+    * **Animated Holo-Grid:** A dynamic, panning radial-gradient background that reacts to the user.
+* **Reactive State Management:** Fully decoupled logic from the view layer. The UI is a reactive reflection of the game's internal graph state.
+* **Integrated AI Briefing:** An embedded AI video system within the Rules Modal for an authentic "simulation" experience.
+
+---
+
+## 🎮 The Rules of Engagement
+
+Quantum Tic-Tac-Toe is a game of strategy where you manipulate probability.
+
+1.  **The Move:** On your turn, place **two** entangled "ghost" pieces. Your piece exists in both squares at once.
+2.  **The Loop:** As more pieces are added, they form a chain. When a move connects back to itself, a **Cyclic Entanglement** (Loop) is formed.
+3.  **The Collapse:** The universe cannot sustain a loop. The player who did **NOT** complete the loop chooses how it resolves. One ghost becomes solid, and the other disappears.
+4.  **Victory:** The first player to have **3 solid (classical) pieces** in a row wins.
 
 ---
 
 ## 🛠️ Technical Architecture
 
-This application is built entirely with vanilla web technologies, utilizing an IIFE (Immediately Invoked Function Expression) architecture to encapsulate the game state and view logic.
+### **The Stack**
+* **Frontend:** React 18 (Functional Components & Hooks).
+* **Styling:** Pure CSS3 (Glassmorphism, Flexbox Grid, Keyframe Animations).
+* **Logic:** Vanilla ES6 Classes (Graph Theory & Adjacency Lists).
+* **Runtime:** Babel Standalone (In-browser JSX compilation for zero-config portability).
 
-* **State Management (`Board` Class):** Handles the mathematical representation of the 3x3 grid. It manages arrays of quantum moves, tracks the history stack for the Undo feature, and runs a cycle-detection algorithm (Depth-First Search) to identify when entanglement forces a collapse.
-* **DOM Manipulation (`View` Class):** A jQuery-powered rendering engine that dynamically injects CSS-styled elements to represent probabilistic moves mathematically proportional to the board size.
+### **Project Structure**
+* `index.html`: Entry point and CDN manager for React/Babel.
+* `style.css`: The "20/10" Visual Engine (Holographic Cyber-Matrix theme).
+* `app.jsx`: The React Application (State, UI, and the `Board` Logic).
+* `rules-video.mp4`: The AI-generated mission briefing.
 
 ---
 
-## 🚀 Local Installation
+## 🚀 Deployment & Installation
 
-Since this project has zero external dependencies other than a CDN link for jQuery, running it locally is instantaneous.
+This repository is "Plug-and-Play." No `npm install` or `node_modules` required.
 
-1. Clone the repository:
-   ```bash
-   git clone [https://github.com/Sagnik-Coder/Quantum-TicTacToe.git](https://github.com/Sagnik-Coder/Quantum-TicTacToe.git)
+1.  **Clone the Repo:**
+    ```bash
+    git clone [https://github.com/Sagnik-Coder/Quantum-TicTacToe.git](https://github.com/Sagnik-Coder/Quantum-TicTacToe.git)
+    ```
+2.  **Add Video Content:**
+    Ensure your `rules-video.mp4` is in the root folder.
+3.  **Launch:**
+    Open `index.html` in any modern browser to begin the simulation.
+
+---
+
+## 👨‍💻 Author
+
+**Sagnik Sengupta**
+* **GitHub:** [@Sagnik-Coder](https://github.com/Sagnik-Coder)
+* **Skills:** Data Science, Advanced Python (PPO, AI Benchmarking), and Immersive Front-end Architecture.
+
+---
+
+## 🔮 Roadmap
+- [ ] Port to **TypeScript** for strict move-type safety.
+- [ ] Implement a **Minimax AI** opponent with quantum branch pruning.
+- [ ] **Tailwind CSS** refactor for utility-first styling.
+
+*If you find this simulation impressive, consider giving the repository a ⭐!*
