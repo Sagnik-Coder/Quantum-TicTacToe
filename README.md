@@ -10,7 +10,7 @@
 A high-fidelity, visually immersive adaptation of Tic-Tac-Toe based on the principles of quantum mechanics—specifically **superposition** and **entanglement**. This project bridges the gap between complex graph theory and modern web architecture.
 ---
 
-** Live Preview -** [Play](https://sagnik-coder.github.io/Quantum-TicTacToe/)
+**Live Preview -** [Play](https://sagnik-coder.github.io/Quantum-TicTacToe/)
 
 ## ✨ Features
 
