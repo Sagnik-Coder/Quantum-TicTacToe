@@ -1,6 +1,6 @@
 const { useState, useRef, useEffect } = React;
 
-// --- BOARD LOGIC (Preserved perfectly, no UI code here) ---
+// BOARD LOGIC 
 class Board {
   static QUANTUM = 'quantum'; static COLLAPSE = 'collapse'; static CLASSICAL = 'classical';
   static PLAYERX = 'X'; static PLAYERO = 'O';
@@ -121,8 +121,6 @@ class Board {
   }
 }
 
-// --- REACT COMPONENTS ---
-
 const RulesModal = ({ onClose }) => (
   <div className="modal-overlay">
     <div className="rules-content glass-panel">
@@ -146,7 +144,6 @@ const RulesModal = ({ onClose }) => (
 
 const Cell = ({ index, pieceData, onClick, halfMove, isCollapseHighlight, winHighlight }) => {
   
-  // Render sub-components based on cell state
   const renderClassical = (num) => (
     <div className="classical">
       <div className={`piece ${num % 2 === 1 ? 'x' : 'o'}`}>
@@ -172,23 +169,19 @@ const Cell = ({ index, pieceData, onClick, halfMove, isCollapseHighlight, winHig
     <div className="cell" onClick={() => onClick(index)}>
       {isCollapseHighlight && <div className="highlight collapse"></div>}
       {winHighlight && <div className={`highlight ${winHighlight}`}></div>}
-      
-      {/* If array, render quantum. If number, render classical */}
       {Array.isArray(pieceData) ? pieceData.map(renderQuantum) : renderClassical(pieceData)}
-      
-      {/* Show the pending half-move if this cell was clicked */}
       {halfMove === index && renderQuantum(pieceData.length + 1 || 1)} 
     </div>
   );
 };
 
 const App = () => {
-  const [screen, setScreen] = useState('start'); // 'start' or 'game'
+  const [screen, setScreen] = useState('start'); 
   const [showRules, setShowRules] = useState(false);
   
   // Game State
   const boardRef = useRef(new Board());
-  const [tick, setTick] = useState(0); // Used to force React re-render when Board class updates
+  const [tick, setTick] = useState(0); 
   const [halfMove, setHalfMove] = useState(null);
 
   const board = boardRef.current;
@@ -215,7 +208,7 @@ const App = () => {
 
     if (move && board.move(move)) {
       setHalfMove(null);
-      setTick(t => t + 1); // Trigger re-render
+      setTick(t => t + 1); 
     }
   };
 
@@ -249,7 +242,6 @@ const App = () => {
     return `${formatScore(scores[Board.PLAYERX])} \u2014 ${formatScore(scores[Board.PLAYERO])}`;
   };
 
-  // Determine highlights for rendering
   const collapseHighlights = board.nextType() === Board.COLLAPSE 
     ? [1,2,3,4,5,6,7,8,9].filter(i => board._canMove({ type: Board.COLLAPSE, cells: i }))
     : [];
